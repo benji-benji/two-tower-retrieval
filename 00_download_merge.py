@@ -42,8 +42,8 @@ with open('./glove_embeddings/glove_embeddings_6B_100d_w2v.txt', 'wb') as f: f.w
 
 # CHECK FILES EXIST
 print("\nChecking files saved...\n")  
-msmarco_path = "/Users/benjipro/MLX/MLX_two_towers/corpus/msmarco.txt"
-text8_path = "/Users/benjipro/MLX/MLX_two_towers/corpus/text8.txt"
+msmarco_path = "./corpus/msmarco.txt"
+text8_path = "./corpus/text8.txt"
 print ("msmarco.txt file exists:", os.path.exists(msmarco_path))
 print ("text8.txt file exists:", os.path.exists(text8_path))
 

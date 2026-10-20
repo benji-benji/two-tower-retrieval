@@ -82,9 +82,9 @@ def build_vocab(texts, glove_path):
     # words_to_idx = {word: idx for idx, word in enumerate(vocab)}
     return vocab # , word_to_idx
 
-#vocab, word_to_idx = build_vocab(texts, glove_path='/Users/benjipro/MLX/MLX_two_towers/glove_embeddings/glove.6B.100d.word2vec.embeddings.txt')
+#vocab, word_to_idx = build_vocab(texts, glove_path='./glove_embeddings/glove.6B.100d.word2vec.embeddings.txt')
 
-full_vocab = build_vocab(texts, glove_path='/Users/benjipro/MLX/MLX_two_towers/glove_embeddings/glove_embeddings_6B_100d_w2v.txt')
+full_vocab = build_vocab(texts, glove_path='./glove_embeddings/glove_embeddings_6B_100d_w2v.txt')
 print("Length of full vocab:", len(full_vocab))
 words_to_idx, ids_to_words = create_lookup_tables(full_vocab)
 tokenizer = { "words_to_idx": words_to_idx, "ids_to_words": ids_to_words }

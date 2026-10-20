@@ -1,4 +1,4 @@
-# 05_server.py
+# 04_server.py
 
 import torch
 import pickle
@@ -10,9 +10,9 @@ import dataset
 
 # ---- Config ----
 embedding_dim = 100
-glove_path = '/Users/benjipro/MLX/MLX_two_towers/glove_embeddings/glove_embeddings_6B_100d_w2v.txt'
-tokenizer_path = '/Users/benjipro/MLX/MLX_two_towers/corpus/tokeniser.pkl'
-checkpoint_path = '/Users/benjipro/MLX/MLX_two_towers/checkpoints/2025_06_20__15_15_32.19.350.two.pth'
+glove_path = './glove_embeddings/glove_embeddings_6B_100d_w2v.txt'
+tokenizer_path = './corpus/tokeniser.pkl'
+checkpoint_path = './checkpoints/2025_06_20__15_15_32.19.350.two.pth'
 
 # ---- Device ----
 dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

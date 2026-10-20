@@ -1,27 +1,25 @@
-
-def similarity_eval(model_path, tokenizer_path, evals_path, docs_path, num_queries=5):
+def similarity_eval(model_path, tokenizer_path, evals_path, docs_path, num_queries=5, max_len=50):
     '''
-    (no ranking or retrival, just similarity / dissimilarity)
-
-1. the model is already trained ( weights and biases saved)
-2. i want to load up 5 random queries from my eval_queries & 5 associated docs 
-3. i then want to load 15 randomly selected queries from my dataset
-4. I then want to run the query through the model to get an embedding
-5. I then want to run the model on the 20 docs (5 correct docs, and the 15 random docs) 
-6. Then for each query, I want to print the correct doc and the 5 random docs
-7. I want to compare the cosine similarity of the query & 4 docs (3 random docs & one correct doc)
+    Fixed evaluation function with comprehensive metrics:
+    - Recall@K (for K=1,3,5)
+    - Mean Reciprocal Rank (MRR)
+    - Average rank of correct document
     '''
     
     import random
     import torch
+    import numpy as np
     from torch.nn.functional import cosine_similarity
     import pickle
-    import models  # Make sure this imports your Towers class
+    import models
+    from dataset import Triplets
+    preprocess = lambda t: Triplets.preprocess(None, t)
+    random.seed(0)
+    from load_glove import load_glove
 
-    glove_dim = 100
-    
     # Load model
-    model = models.Towers(glove_dim)
+    embedding_dim = 100
+    model = models.Towers(embedding_dim)
     model.load_state_dict(torch.load(model_path, map_location='cpu'))
     model.eval()
 
@@ -29,64 +27,148 @@ def similarity_eval(model_path, tokenizer_path, evals_path, docs_path, num_queri
     with open(tokenizer_path, 'rb') as f:
         tokenizer = pickle.load(f)
     words_to_idx = tokenizer['words_to_idx']
-    
-    glove_path = '/Users/benjipro/MLX/MLX_two_towers/glove_embeddings/glove_embeddings_6B_100d_w2v.txt'
-    embedding_dim = 100  # or whatever you used in training
-    from load_glove import load_glove  # replace with actual import if needed
+
+    # Load GloVe embeddings
+    glove_path = './glove_embeddings/glove_embeddings_6B_100d_w2v.txt'
     embeddings = load_glove(glove_path, words_to_idx, embedding_dim=embedding_dim)
     embedding_layer = torch.nn.Embedding.from_pretrained(embeddings, freeze=True)
 
-
     # Load eval queries and docs
     with open(evals_path, 'rb') as f:
-        eval_data = pickle.load(f)  # List of (query, correct_doc) pairs
+        eval_data = pickle.load(f)
 
     # Load all docs
     with open(docs_path, 'rb') as f:
-        all_docs = pickle.load(f)  # List of doc strings
+        all_docs = pickle.load(f)
 
-    # Select num_queries random eval queries and their correct docs
+    def embed_text(text, words_to_idx, embedding_layer, max_len=50):
+        """Convert text to averaged embeddings tensor"""
+        tokens = preprocess(text)
+        indices = [words_to_idx.get(token, words_to_idx.get('<UNK>', 0)) for token in tokens[:max_len]]
+        indices_tensor = torch.tensor(indices, dtype=torch.long)
+        embeddings = embedding_layer(indices_tensor)
+        avg_embedding = embeddings.mean(dim=0, keepdim=True)
+        return avg_embedding
+
+    # Select random eval queries and their correct docs
     selected = random.sample(list(eval_data.items()), num_queries)
-    print(eval_data)
-    print(type(eval_data))
-    print(next(iter(eval_data)))
-    queries = [v['text'] for k, v in selected]
-    correct_docs = [v['docs'][0] for k, v in selected]
+    
+    # Extract query texts and correct doc IDs
+    queries_text = [item[1]['text'] for item in selected]
+    correct_doc_ids = [item[1]['docs'][0] for item in selected]
+    
+    # Get correct doc texts
+    correct_docs_text = [all_docs[doc_id] for doc_id in correct_doc_ids]
+    
+    # Select random docs (excluding correct ones)
+    candidate_doc_ids = list(set(all_docs.keys()) - set(correct_doc_ids))
+    
+    # Metrics storage
+    recall_at_1 = 0
+    recall_at_3 = 0
+    recall_at_5 = 0
+    reciprocal_ranks = []
+    avg_ranks = []
 
-    # Select 3*num_queries random docs (excluding correct docs)
-    candidate_docs = list(set(all_docs.keys()) - set(correct_docs))
-    random_docs = random.sample(candidate_docs, 3 * num_queries)
+    print("Starting evaluation...\n")
+    print(f"Evaluating on {num_queries} queries with 1 correct and 9 random documents each")
 
-    # Tokenize and average embeddings (dummy example, replace with your embedding layer)
-    def embed(text):
-        tokens = [words_to_idx.get(w, words_to_idx['<UNK>']) for w in text.split()]
-        tokens_tensor = torch.tensor(tokens, dtype=torch.long)
-        # Assume you have an embedding_layer available
-        emb = embedding_layer(tokens_tensor)  # shape: [seq_len, glove_dim]
-        avg_emb = emb.mean(dim=0, keepdim=True)  # shape: [1, glove_dim]
-        return avg_emb
+    for i, (query_text, correct_doc_id) in enumerate(zip(queries_text, correct_doc_ids)):
+        # Convert text to embeddings
+        query_embedding = embed_text(query_text, words_to_idx, embedding_layer, max_len)
+        correct_doc_text = all_docs[correct_doc_id]
+        correct_doc_embedding = embed_text(correct_doc_text, words_to_idx, embedding_layer, max_len)
+        
+        with torch.no_grad():
+            # Get embeddings from model towers
+            query_emb = model.query_tower(query_embedding)
+            correct_doc_emb = model.doc_tower(correct_doc_embedding)
+            
+            # Calculate similarity with correct doc
+            sim_correct = cosine_similarity(query_emb, correct_doc_emb, dim=1).item()
+            
+            print(f"\nQuery {i+1}: {query_text}")
+            print(f"  Correct Doc: {correct_doc_id[:16]}... | Cosine Sim: {sim_correct:.3f}")
+            
+            # Select 9 random docs for this query (for better metrics)
+            rand_doc_ids = random.sample(candidate_doc_ids, 9)
+            candidate_docs = [correct_doc_id] + rand_doc_ids
+            random.shuffle(candidate_docs)  # Important for unbiased ranking
+            
+            # Calculate similarities for all candidates
+            candidate_sims = []
+            for doc_id in candidate_docs:
+                doc_text = all_docs[doc_id]
+                doc_embedding = embed_text(doc_text, words_to_idx, embedding_layer, max_len)
+                doc_emb = model.doc_tower(doc_embedding)
+                sim = cosine_similarity(query_emb, doc_emb, dim=1).item()
+                candidate_sims.append((doc_id, sim))
+                
+                # Print the first 3 random docs for consistency
+                if doc_id in rand_doc_ids[:3]:
+                    print(f"  Random Doc {rand_doc_ids.index(doc_id)+1}: {doc_id[:16]}... | Cosine Sim: {sim:.3f}")
+            
+            # Sort candidates by similarity (descending)
+            candidate_sims.sort(key=lambda x: x[1], reverse=True)
+            
+            # Get ranked list of document IDs
+            ranked_docs = [doc_id for doc_id, _ in candidate_sims]
+            
+            # Find rank of correct document (1-indexed)
+            rank = ranked_docs.index(correct_doc_id) + 1
+            avg_ranks.append(rank)
+            
+            # Calculate reciprocal rank for MRR
+            reciprocal_rank = 1.0 / rank
+            reciprocal_ranks.append(reciprocal_rank)
+            
+            # Update recall metrics
+            if rank <= 1:
+                recall_at_1 += 1
+            if rank <= 3:
+                recall_at_3 += 1
+            if rank <= 5:
+                recall_at_5 += 1
+            
+            print(f"  -> Correct doc rank: {rank}/{len(candidate_docs)} | Reciprocal Rank: {reciprocal_rank:.4f}")
+    
+    # Calculate final metrics
+    recall_at_1 /= num_queries
+    recall_at_3 /= num_queries
+    recall_at_5 /= num_queries
+    mrr = np.mean(reciprocal_ranks)
+    avg_rank = np.mean(avg_ranks)
+    
+    # Print comprehensive metrics
+    print("\n" + "=" * 60)
+    print("Evaluation Summary:")
+    print(f"Queries evaluated: {num_queries}")
+    print(f"Recall@1: {recall_at_1:.4f} - Proportion where correct doc is top result")
+    print(f"Recall@3: {recall_at_3:.4f} - Proportion where correct doc is in top 3")
+    print(f"Recall@5: {recall_at_5:.4f} - Proportion where correct doc is in top 5")
+    print(f"MRR (Mean Reciprocal Rank): {mrr:.4f} - Average of 1/rank (higher is better)")
+    print(f"Average Rank: {avg_rank:.2f} - Average position of correct document (lower is better)")
+    print("=" * 60)
+    
+# Run your evaluation
+model_path = "./checkpoints/2025_06_20__15_15_32.19.350.two.pth"
+tokenizer_path = "./corpus/tokeniser.pkl"
+evals_path = "./corpus/evals.pkl"
+docs_path = "./corpus/docs.pkl"
 
-    for i, (query, correct_doc) in enumerate(zip(queries, correct_docs)):
-        query_emb = model.query_tower(embed(query))
-        correct_doc_emb = model.doc_tower(embed(correct_doc))
-        sim_correct = cosine_similarity(query_emb, correct_doc_emb).item()
+# First run debug to check model behavior
+sample_texts = [
+    "how does eating an apple help digestion",
+    "caffeine supplements disadvantages",
+    "protect yourself from emp attack",
+    "good foods for gout sufferers",
+    "what is a muscle car"
+]
 
-        # 3 random docs for this query
-        rand_docs = random_docs[i*3:(i+1)*3]
-        rand_sims = []
-        for rand_doc in rand_docs:
-            rand_doc_emb = model.doc_tower(embed(rand_doc))
-            sim_rand = cosine_similarity(query_emb, rand_doc_emb).item()
-            rand_sims.append((rand_doc, sim_rand))
+print("Running debug check first...")
+#debug_model_outputs(model_path, tokenizer_path, sample_texts)
 
-        print(f"\nQuery {i+1}: {query}")
-        print(f"  Correct Doc: {correct_doc[:80]}... | Cosine Sim: {sim_correct:.3f}")
-        for j, (rand_doc, sim_rand) in enumerate(rand_sims):
-            print(f"  Random Doc {j+1}: {rand_doc[:80]}... | Cosine Sim: {sim_rand:.3f}")
-
-
-model_path = "/Users/benjipro/MLX/MLX_two_towers/checkpoints/2025_06_20__14_37_33.9.150.two.pth"
-tokenizer_path = "/Users/benjipro/MLX/MLX_two_towers/corpus/tokeniser.pkl"
-evals_path = "/Users/benjipro/MLX/MLX_two_towers/corpus/evals.pkl"
-docs_path = "/Users/benjipro/MLX/MLX_two_towers/corpus/docs.pkl"
-similarity_eval(model_path, tokenizer_path, evals_path, docs_path, num_queries=5)
+print("\n" + "="*60)
+print("Running fixed evaluation...")
+print("="*60)
+similarity_eval(model_path, tokenizer_path, evals_path, docs_path, num_queries=50)

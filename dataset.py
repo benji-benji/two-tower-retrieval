@@ -55,30 +55,3 @@ class Triplets(Dataset):
     text = text.replace("'",  ' <APOSTROPHE> ')
     text = text.replace("’",  ' <APOSTROPHE> ')
     return text.split()
-
-if __name__ == "__main__":
-    # Dummy check: assume you have loaded emb layer and tokeniser already
-    # Replace the following lines with your actual embedding layer and tokeniser
-    import torch.nn as nn
-    
-    # Dummy embeddings for testing — use your real model in practice
-    vocab_size = 10000
-    embedding_dim = 100
-    dummy_emb_layer = nn.Embedding(vocab_size, embedding_dim).to('cpu')
-
-    # Dummy tokeniser mapping
-    dummy_tokeniser = {str(i): i for i in range(vocab_size)}
-    with open('./corpus/tokeniser.pkl', 'wb') as f:
-        pickle.dump({"words_to_idx": dummy_tokeniser}, f)
-
-    # Now try to instantiate the dataset
-    try:
-        dataset = Triplets(dummy_emb_layer, dummy_tokeniser)
-        print(f"Dataset length: {len(dataset)}")
-        qry, pos, neg = dataset[0]
-        print("Sample triplet loaded!")
-        print(f"Query shape: {qry.shape}, device: {qry.device}")
-        print(f"Positive shape: {pos.shape}, device: {pos.device}")
-        print(f"Negative shape: {neg.shape}, device: {neg.device}")
-    except Exception as e:
-        print("Error during dataset test:", e)

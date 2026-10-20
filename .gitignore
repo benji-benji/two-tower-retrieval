@@ -98,3 +98,6 @@ train-00000-of-00001.parquet
 glove.6B.100d.word2vec.embeddings.txt
 /corpus
 /glove_embeddings
+# Model outputs and run logs (kept locally, not in the repo)
+checkpoints/
+wandb/

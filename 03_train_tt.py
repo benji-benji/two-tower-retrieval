@@ -24,7 +24,7 @@ with open('./corpus/tokeniser.pkl', 'rb') as f: tkns = pickle.load(f)
 words_to_idx, ids_to_words = tkns['words_to_idx'], tkns['ids_to_words']
 dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-glove_path = '/Users/benjipro/MLX/MLX_two_towers/glove_embeddings/glove_embeddings_6B_100d_w2v.txt'
+glove_path = './glove_embeddings/glove_embeddings_6B_100d_w2v.txt'
 embeddings = load_glove(glove_path, words_to_idx, embedding_dim=embedding_dim)
 embedding_layer = nn.Embedding.from_pretrained(embeddings, freeze=True)
 
@@ -34,7 +34,7 @@ dl = torch.utils.data.DataLoader(ds, batch_size=batch_size, shuffle=True)
 
 two = models.Towers(glove_dim=embedding_dim).to(dev)
 torch.save(two.state_dict(), f'./checkpoints/{ts}.0.0.two.pth')
-print('two:', sum(p.numel() for p in two.parameters())) # 66,048
+print('two:', sum(p.numel() for p in two.parameters())) # 40,400
 opt = torch.optim.Adam(two.parameters(), lr=learning_rate)
 
 
