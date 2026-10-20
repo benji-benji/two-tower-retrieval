@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="672" viewBox="0 0 460 336" role="img" aria-label="Two-tower architecture: query and passage each pass through frozen GloVe lookup, mean pooling and their own two-layer tower; cosine similarity of the two encodings gives the score">
+  <style>
+    /* Palette and weights follow alphaedit-chart-style-guide.md (BBK report diagrams).
+       Colours are literal here so the file renders standalone. */
+    .tk  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 7px;   fill: #161C22; }
+    .tw  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 7px;   fill: #FFFFFF; }
+    .twb { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 7.4px; font-weight: 600; fill: #FFFFFF; }
+    .tm  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 6.2px; fill: #97A5B3; }
+    .tl  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 6.6px; letter-spacing: .08em; fill: #97A5B3; }
+    .c   { text-anchor: middle; }
+    .r   { text-anchor: end; }
+    .box  { fill: #FFFFFF; stroke: #3B4652; stroke-width: 1; }
+    .pos  { fill: #AFEAFC; stroke: #3B4652; stroke-width: 1; }
+    .frz  { fill: #F2F6FA; stroke: #3B4652; stroke-width: 1; }
+    .acc  { fill: #645AC6; stroke: #3B4652; stroke-width: 1; }
+    .boxd { fill: none; stroke: #97A5B3; stroke-width: 1; stroke-dasharray: 3 2.5; }
+    .conn { fill: none; stroke: #97A5B3; stroke-width: 1; }
+  </style>
+  <defs>
+    <marker id="arw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="4.5" markerHeight="4.5" orient="auto">
+      <path d="M0 0.6 L8 4 L0 7.4 Z" fill="#97A5B3"/>
+    </marker>
+  </defs>
+  <rect width="460" height="336" fill="#FFFFFF"/>
+
+  <!-- score at the top -->
+  <rect class="acc" x="160" y="10" width="140" height="30" rx="3"/>
+  <text class="twb c" x="230" y="22">score</text>
+  <text class="tw c"  x="230" y="33">cos(query enc, passage enc)</text>
+
+  <!-- tower outlines -->
+  <rect class="boxd" x="40"  y="56" width="150" height="176" rx="5"/>
+  <text class="tl" x="48" y="68">QUERY TOWER</text>
+  <text class="tm r" x="184" y="68">own weights</text>
+  <rect class="boxd" x="270" y="56" width="150" height="176" rx="5"/>
+  <text class="tl" x="278" y="68">DOCUMENT TOWER</text>
+  <text class="tm r" x="414" y="68">own weights</text>
+
+  <!-- layer-row labels (centre gutter) -->
+  <text class="tm c" x="230" y="90">encoding</text>
+  <text class="tm c" x="230" y="136">trained</text>
+  <text class="tm c" x="230" y="144">together,</text>
+  <text class="tm c" x="230" y="152">not shared</text>
+  <text class="tm c" x="230" y="196">no params</text>
+  <text class="tm c" x="230" y="218">frozen,</text>
+  <text class="tm c" x="230" y="226">shared table</text>
+
+  <!-- ===== query tower (bottom to top) ===== -->
+  <!-- input -->
+  <rect class="box" x="55" y="276" width="120" height="30" rx="3"/>
+  <text class="tk" x="61" y="288">query text</text>
+  <text class="tm" x="61" y="298">"causes of volcanic eruption"</text>
+  <line class="conn" x1="115" y1="276" x2="115" y2="234" marker-end="url(#arw)"/>
+  <text class="tm" x="120" y="258">tokenise · n tokens</text>
+
+  <rect class="frz" x="55" y="210" width="120" height="20" rx="3"/>
+  <text class="tk" x="61" y="222">GloVe lookup</text>
+  <text class="tm r" x="169" y="222">n × 100</text>
+  <line class="conn" x1="115" y1="210" x2="115" y2="204" marker-end="url(#arw)"/>
+
+  <rect class="box" x="55" y="184" width="120" height="20" rx="3"/>
+  <text class="tk" x="61" y="196">mean pool</text>
+  <text class="tm r" x="169" y="196">100</text>
+  <line class="conn" x1="115" y1="184" x2="115" y2="173" marker-end="url(#arw)"/>
+
+  <rect class="box" x="55" y="148" width="120" height="25" rx="3"/>
+  <text class="tk" x="61" y="158">Linear 100→100</text>
+  <text class="tm r" x="169" y="158">10,100</text>
+  <text class="tm" x="61" y="167">+ ReLU</text>
+  <line class="conn" x1="115" y1="148" x2="115" y2="141" marker-end="url(#arw)"/>
+
+  <rect class="box" x="55" y="121" width="120" height="20" rx="3"/>
+  <text class="tk" x="61" y="133">Linear 100→100</text>
+  <text class="tm r" x="169" y="133">10,100</text>
+  <line class="conn" x1="115" y1="121" x2="115" y2="105" marker-end="url(#arw)"/>
+
+  <rect class="pos" x="55" y="80" width="120" height="25" rx="3"/>
+  <text class="tk" x="61" y="90">query encoding</text>
+  <text class="tm" x="61" y="99">100-d</text>
+
+  <!-- ===== document tower ===== -->
+  <rect class="box" x="285" y="276" width="120" height="30" rx="3"/>
+  <text class="tk" x="291" y="288">passage text</text>
+  <text class="tm" x="291" y="298">MS MARCO v1.1</text>
+  <line class="conn" x1="345" y1="276" x2="345" y2="234" marker-end="url(#arw)"/>
+  <text class="tm" x="350" y="258">tokenise · m tokens</text>
+
+  <rect class="frz" x="285" y="210" width="120" height="20" rx="3"/>
+  <text class="tk" x="291" y="222">GloVe lookup</text>
+  <text class="tm r" x="399" y="222">m × 100</text>
+  <line class="conn" x1="345" y1="210" x2="345" y2="204" marker-end="url(#arw)"/>
+
+  <rect class="box" x="285" y="184" width="120" height="20" rx="3"/>
+  <text class="tk" x="291" y="196">mean pool</text>
+  <text class="tm r" x="399" y="196">100</text>
+  <line class="conn" x1="345" y1="184" x2="345" y2="173" marker-end="url(#arw)"/>
+
+  <rect class="box" x="285" y="148" width="120" height="25" rx="3"/>
+  <text class="tk" x="291" y="158">Linear 100→100</text>
+  <text class="tm r" x="399" y="158">10,100</text>
+  <text class="tm" x="291" y="167">+ ReLU</text>
+  <line class="conn" x1="345" y1="148" x2="345" y2="141" marker-end="url(#arw)"/>
+
+  <rect class="box" x="285" y="121" width="120" height="20" rx="3"/>
+  <text class="tk" x="291" y="133">Linear 100→100</text>
+  <text class="tm r" x="399" y="133">10,100</text>
+  <line class="conn" x1="345" y1="121" x2="345" y2="105" marker-end="url(#arw)"/>
+
+  <rect class="pos" x="285" y="80" width="120" height="25" rx="3"/>
+  <text class="tk" x="291" y="90">passage encoding</text>
+  <text class="tm" x="291" y="99">100-d</text>
+
+  <!-- encodings to score -->
+  <path class="conn" d="M115 80 L115 48 L196 48 L196 44" marker-end="url(#arw)"/>
+  <path class="conn" d="M345 80 L345 48 L264 48 L264 44" marker-end="url(#arw)"/>
+
+
+  <!-- footer -->
+  <text class="tm" x="10" y="326">4 Linear layers, 2 per tower, all trained in one run · 4 × 10,100 = 40,400 params</text>
+</svg>

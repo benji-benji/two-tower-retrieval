@@ -6,6 +6,8 @@ Machine Learning Institute residency, week 2 (June 2025). Team Backprop Bunch; t
 
 ## How it works
 
+![Two-tower architecture](docs/architecture_v2.svg)
+
 1. **Embed the text.** Each query and passage is tokenised, every token is mapped to a frozen 100-dimensional GloVe vector (6B, 100d), and the vectors are averaged into one 100-d vector.
 2. **Two towers.** A query tower and a document tower, each `Linear(100→100) → ReLU → Linear(100→100)`. 40,400 trainable parameters in total.
 3. **Triplet loss.** For a query *q*, its relevant passage *p⁺* and a randomly sampled passage *p⁻*:
@@ -13,7 +15,11 @@ Machine Learning Institute residency, week 2 (June 2025). Team Backprop Bunch; t
    `loss = max(0, d(q, p⁺) − d(q, p⁻) + margin)`, with `d(a, b) = 1 − cos(a, b)` and margin 0.7.
 
    The loss is zero once the relevant passage is closer to the query than the random one by at least the margin.
+
+   ![Training on a triplet](docs/training_v1.svg)
 4. **Search.** All passages are encoded once by the document tower. A query is encoded by the query tower and passages are ranked by cosine similarity (FastAPI endpoint, Streamlit front end).
+
+   ![Search at inference time](docs/inference_v1.svg)
 
 Training: Adam, learning rate 0.002, batch size 256, 20 epochs, logged to Weights & Biases.
 

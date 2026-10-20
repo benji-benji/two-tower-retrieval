@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="324" viewBox="0 0 460 162" role="img" aria-label="Two-tower search: passages encoded once and cached, query encoded at request time, ranked by cosine similarity, top results returned">
+  <style>
+    /* Palette and weights follow alphaedit-chart-style-guide.md (BBK report diagrams).
+       Colours are literal here so the file renders standalone. */
+    .tk  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 7px;   fill: #161C22; }
+    .tw  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 7px;   fill: #FFFFFF; }
+    .twb { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 7px;   font-weight: 600; fill: #FFFFFF; }
+    .tm  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 6.2px; fill: #97A5B3; }
+    .tl  { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 6.4px; letter-spacing: .08em; fill: #97A5B3; }
+    .box  { fill: #FFFFFF; stroke: #3B4652; stroke-width: 1; }
+    .pos  { fill: #AFEAFC; stroke: #3B4652; stroke-width: 1; }
+    .acc  { fill: #645AC6; stroke: #3B4652; stroke-width: 1; }
+    .boxd { fill: none; stroke: #97A5B3; stroke-width: 1; stroke-dasharray: 3 2.5; }
+    .conn { fill: none; stroke: #97A5B3; stroke-width: 1; }
+  </style>
+  <defs>
+    <marker id="arw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="4.5" markerHeight="4.5" orient="auto">
+      <path d="M0 0.6 L8 4 L0 7.4 Z" fill="#97A5B3"/>
+    </marker>
+  </defs>
+  <rect width="460" height="162" fill="#FFFFFF"/>
+
+  <!-- once, offline -->
+  <rect class="boxd" x="10" y="12" width="300" height="50" rx="5"/>
+  <text class="tl" x="18" y="24">ONCE, BEFORE SERVING</text>
+  <rect class="box" x="18" y="32" width="80" height="22" rx="3"/>
+  <text class="tk" x="24" y="42">all passages</text>
+  <text class="tm" x="24" y="50">MS MARCO v1.1</text>
+  <line class="conn" x1="98" y1="43" x2="114" y2="43" marker-end="url(#arw)"/>
+  <rect class="box" x="118" y="32" width="84" height="22" rx="3"/>
+  <text class="tk" x="124" y="42">GloVe average</text>
+  <text class="tm" x="124" y="50">→ document tower</text>
+  <line class="conn" x1="202" y1="43" x2="214" y2="43" marker-end="url(#arw)"/>
+  <rect class="pos" x="218" y="32" width="86" height="22" rx="3"/>
+  <text class="tk" x="224" y="42">cached encodings</text>
+  <text class="tm" x="224" y="50">100-d per passage</text>
+
+  <!-- per request -->
+  <rect class="boxd" x="10" y="78" width="300" height="50" rx="5"/>
+  <text class="tl" x="18" y="90">EACH REQUEST</text>
+  <rect class="box" x="18" y="98" width="80" height="22" rx="3"/>
+  <text class="tk" x="24" y="108">user query</text>
+  <text class="tm" x="24" y="116">GET /search?q=</text>
+  <line class="conn" x1="98" y1="109" x2="114" y2="109" marker-end="url(#arw)"/>
+  <rect class="box" x="118" y="98" width="84" height="22" rx="3"/>
+  <text class="tk" x="124" y="108">GloVe average</text>
+  <text class="tm" x="124" y="116">→ query tower</text>
+  <line class="conn" x1="202" y1="109" x2="214" y2="109" marker-end="url(#arw)"/>
+  <rect class="box" x="218" y="98" width="86" height="22" rx="3"/>
+  <text class="tk" x="224" y="108">query encoding</text>
+  <text class="tm" x="224" y="116">100-d</text>
+
+  <!-- rank -->
+  <path class="conn" d="M304 43 L322 43 L322 70 L332 70" marker-end="url(#arw)"/>
+  <path class="conn" d="M304 109 L322 109 L322 82 L332 82" marker-end="url(#arw)"/>
+  <rect class="acc" x="336" y="60" width="114" height="32" rx="3"/>
+  <text class="twb" x="342" y="73">rank by cosine</text>
+  <text class="tw"  x="342" y="85">similarity, keep top k</text>
+  <line class="conn" x1="393" y1="92" x2="393" y2="104" marker-end="url(#arw)"/>
+  <rect class="box" x="336" y="108" width="114" height="20" rx="3"/>
+  <text class="tk" x="342" y="120">top-k passages + scores</text>
+
+  <text class="tm" x="10" y="148">Minimising 1 − cos in training is the same as maximising cos here.</text>
+</svg>
